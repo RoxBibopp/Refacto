@@ -1,0 +1,52 @@
+name: CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main  # S'exécute uniquement sur des pushs sur la branche main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 1. Installer Node.js
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '16'  # Utilise la version que tu veux
+
+    # 2. Installer les dépendances
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm install
+
+    # 3. Set NODE_ENV to production
+    - name: Set NODE_ENV to production
+      run: echo "NODE_ENV=production" >> $GITHUB_ENV
+
+    # 4. Build du frontend
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build  # Si tu utilises Vue CLI ou Vite
+
+    # 5. Déplacer le frontend compilé dans le backend
+    - name: Move frontend to backend
+      run: |
+        rm -rf backend/public
+        mv frontend/dist backend/public
+
+    # 6. Déployer le backend
+    - name: Deploy backend
+      run: |
+        cd backend
+        PROD_DB_HOST=${{ secrets.PROD_DB_HOST }} \
+        PROD_DB_USER=${{ secrets.PROD_DB_USER }} \
+        PROD_DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }} \
+        PROD_DB_NAME=${{ secrets.PROD_DB_NAME }} \
+        npm run start  # Lance ton app en production, ou adapte si nécessaire
